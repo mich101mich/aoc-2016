@@ -9,17 +9,13 @@ fi
 echo "#![allow(unused_imports)]
 
 #[macro_use]
-extern crate scan_fmt;
-
-#[macro_use]
 mod utils;
 mod days {
     pub mod day_$DAY;
 }
-use days::day_$DAY;
 
 fn main() {
-    day_$DAY::$FUNCTION();
+    days::day_$DAY::$FUNCTION();
 }" > src/main.rs
 
 cargo clippy && cargo run --release

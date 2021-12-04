@@ -1,5 +1,5 @@
 [package]
-name = "aoc-2020"
+name = "aoc-2016"
 version = "0.1.0"
 authors = ["mich101mich <mich101mich@gmail.com>"]
 edition = "2018"
@@ -7,10 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rayon = "1.5.0"
-rand = "0.8.0"
-regex = "1.4.2"
-scan_fmt = "0.2.5"
-permutohedron = "0.2.4"
-num = "0.3.1"
-md5 = "0.7.0"
+rayon = "1.5"
+rand = "0.8"
+regex = "1.5"
+sscanf = { git = "https://github.com/mich101mich/sscanf" }
+permutohedron = "0.2"
+num = "0.4"
+md5 = "0.7"

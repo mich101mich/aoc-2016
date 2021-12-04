@@ -12,7 +12,7 @@ pub fn run() {
         //.chars()
         //.map(|l| l.chars().to_vec())
         //.map(parse)
-        //.map(|l| scanf!(l, \"{}\", isize))
+        //.map(|l| scanf!(l, \"{}\", isize).unwrap())
         //.to_vec()
         //.sum::<isize>()
         //.parse::<isize>()
@@ -25,22 +25,18 @@ pub fn run() {
 echo "#![allow(unused_imports)]
 
 #[macro_use]
-extern crate scan_fmt;
-
-#[macro_use]
 mod utils;
 mod days {
     pub mod day_$DAY;
 }
-use days::day_$DAY;
 
 fn main() {
-    day_$DAY::run();
+    days::day_$DAY::run();
 }" > src/main.rs
 
 touch src/input/$DAY.txt
 
-if [ -f cmd.exe ]; then
+if [ -d /mnt/c ]; then
     cmd.exe /c code src/days/day_$DAY.rs src/input/$DAY.txt
 else
     code src/days/day_$DAY.rs src/input/$DAY.txt

@@ -14,7 +14,7 @@ pub fn run() {
     for block in parsed.chunks(3) {
         for col in 0..3 {
             let mut a = block.iter().map(|r| r[col]).to_vec();
-            a.sort();
+            a.sort_unstable();
             if a[0] + a[1] > a[2] {
                 count += 1;
             }
@@ -33,7 +33,7 @@ pub fn part_one() {
         .map(|l| l.split_whitespace().map(parse).to_vec())
         .filter(|a| {
             let mut a = a.clone();
-            a.sort();
+            a.sort_unstable();
             a[0] + a[1] > a[2]
         })
         .count();

@@ -4,11 +4,10 @@ use crate::utils::*;
 pub fn run() {
     #[allow(unused_variables)]
     let input = include_str!("../input/01.txt");
-    // let input = ;
 
     let parsed = input
         .split(", ")
-        .map(|l| (l.chars().next().unwrap(), parse_u(&l[1..])))
+        .map(|l| scanf!(l, "{}{}", char, usize).unwrap())
         .to_vec();
 
     let mut pos = (0, 0);
@@ -35,11 +34,10 @@ pub fn run() {
 pub fn part_one() {
     #[allow(unused_variables)]
     let input = include_str!("../input/01.txt");
-    // let input = ;
 
     let parsed = input
         .split(", ")
-        .map(|l| (l.chars().next().unwrap(), parse_u(&l[1..])))
+        .map(|l| scanf!(l, "{}{}", char, usize).unwrap())
         .to_vec();
 
     let mut pos = (0, 0);

@@ -6,31 +6,21 @@ pub fn run() {
     let input = include_str!("../input/04.txt");
     let parsed = input
         .lines()
-        .filter_map(|l| {
-            let s = l.split('[').to_vec();
-            let check = s[1].strip_suffix(']').unwrap();
-            let mut s = s[0].rsplit('-');
-            let id = parse(s.next().unwrap());
-            let name = s.rev().to_vec();
-            let mut frequencies = HashMap::new();
-            for c in name.iter().flat_map(|n| n.chars()) {
-                *frequencies.entry(c).or_insert(0) += 1;
+        .map(|l| scanf!(l, "{}-{}[{}]", String, usize, String).unwrap())
+        .filter_map(|(name, id, check)| {
+            let mut counts = HashMap::new();
+            for c in name.chars().filter(|c| *c != '-') {
+                *counts.entry(c).or_insert(0) += 1;
             }
-            let mut frequencies = frequencies.iter().to_vec();
-            frequencies.sort_by(|a, b| {
-                if a.1 == b.1 {
-                    a.0.cmp(&b.0)
-                } else {
-                    b.1.cmp(&a.1)
-                }
-            });
-            if frequencies
+            let mut counts = counts.into_iter().to_vec();
+            counts.sort_by(|a, b| a.1.cmp(&b.1).reverse().then(a.0.cmp(&b.0)));
+
+            if counts
                 .iter()
                 .zip(check.chars())
-                .take(check.len())
-                .all(|((c, _), check)| **c == check)
+                .all(|((c, _), check)| *c == check)
             {
-                Some((id, name.join("-")))
+                Some((id, name))
             } else {
                 None
             }
@@ -42,10 +32,12 @@ pub fn run() {
                     if c == '-' {
                         ' '
                     } else {
-                        (((c as isize - 97) + id) % 26 + 97) as u8 as char
+                        let mut n = c as usize - b'a' as usize;
+                        n = (n + id) % 26;
+                        (n as u8 + b'a') as char
                     }
                 })
-                .collect::<String>();
+                .to_string();
             (id, decoded)
         })
         .filter(|(_, name)| name.contains("pole"))
@@ -58,35 +50,25 @@ pub fn part_one() {
     let input = include_str!("../input/04.txt");
     let parsed = input
         .lines()
-        .filter_map(|l| {
-            let s = l.split('[').to_vec();
-            let check = s[1].strip_suffix(']').unwrap();
-            let mut s = s[0].rsplit('-');
-            let id = parse(s.next().unwrap());
-            let name = s.rev().to_vec();
-            let mut frequencies = HashMap::new();
-            for c in name.iter().flat_map(|n| n.chars()) {
-                *frequencies.entry(c).or_insert(0) += 1;
+        .map(|l| scanf!(l, "{}-{}[{}]", String, usize, String).unwrap())
+        .filter_map(|(name, id, check)| {
+            let mut counts = HashMap::new();
+            for c in name.chars().filter(|c| *c != '-') {
+                *counts.entry(c).or_insert(0) += 1;
             }
-            let mut frequencies = frequencies.iter().to_vec();
-            frequencies.sort_by(|a, b| {
-                if a.1 == b.1 {
-                    a.0.cmp(&b.0)
-                } else {
-                    b.1.cmp(&a.1)
-                }
-            });
-            if frequencies
+            let mut counts = counts.into_iter().to_vec();
+            counts.sort_by(|a, b| a.1.cmp(&b.1).reverse().then(a.0.cmp(&b.0)));
+
+            if counts
                 .iter()
                 .zip(check.chars())
-                .take(check.len())
-                .all(|((c, _), check)| **c == check)
+                .all(|((c, _), check)| *c == check)
             {
                 Some(id)
             } else {
                 None
             }
         })
-        .sum::<isize>();
+        .sum::<usize>();
     pv!(parsed);
 }
