@@ -33,17 +33,24 @@ pub fn run() {
     // `a ? !a ? a ? !a ? a ? !a ? a ? !a ?`...
     // where ? are filler bits that we calculate below.
     // One segment of `a ? !a ?` shall be called a `chunk`.
-    // Since parity doesn't care about order, we can combine all the `a` and `!a`, which
-    // would always combine to `0`, and handle the filler bits separately.
+    // Since parity doesn't care about order, we can combine all the `a` and `!a` into
+    // `chunk_sum`, and handle the filler bits separately.
 
     // chunk_len: length of a repeating segment
     // = sequence + filler + inverted sequence + filler
     let chunk_len = parsed.len() * 2 + 2;
+    let chunk_sum = parsed
+        .iter()
+        .copied()
+        .chain(inverted.iter().copied())
+        .reduce(|a, b| a == b)
+        .unwrap();
 
     // The filler bits.
     // The algorithm starts with a 0 between the segments, adds another 0 and flips
-    // the first part around and inverts it. This sequence is difficult to
-    // generate on-the-fly, so we just run the algorithm as intended and store the bits.
+    // the first part around and inverts it.
+    // Option one: Just run the algorithm as intended and store the bits.
+    // Takes a lot of memory, but is faster.
     let num_filler_bits = final_len / (parsed.len() + 1) + 1;
     let mut filler_bits = vec![false; num_filler_bits];
     let mut i = 1;
@@ -59,7 +66,53 @@ pub fn run() {
             });
         i += src.len() + 1;
     }
-    let mut filler_bits = filler_bits.iter(); // convert to iterator for convenience
+    let mut filler_bits = filler_bits.into_iter(); // convert to iterator for convenience
+
+    // Option two: Use a generator
+    // Takes like 99% less memory, but the runtime is twice as long
+    // struct FillerBits {
+    //     stack: Vec<(usize, bool, bool)>,
+    //     depth: usize,
+    //     max_depth: usize,
+    //     val: bool,
+    //     left: bool,
+    // }
+    // impl FillerBits {
+    //     pub fn new(final_len: usize, segment_len: usize) -> Self {
+    //         let max_depth = (final_len as f32 / segment_len as f32).log2().ceil() as usize;
+    //         Self {
+    //             stack: Vec::with_capacity(max_depth * 2),
+    //             depth: 0,
+    //             max_depth,
+    //             val: false,
+    //             left: true,
+    //         }
+    //     }
+    // }
+    // impl Iterator for FillerBits {
+    //     type Item = bool;
+    //     fn next(&mut self) -> Option<Self::Item> {
+    //         if self.depth == self.max_depth {
+    //             if let Some((next_depth, next_val, prev_val)) = self.stack.pop() {
+    //                 self.depth = next_depth;
+    //                 self.val = next_val;
+    //                 self.left = false;
+    //                 Some(prev_val)
+    //             } else {
+    //                 None
+    //             }
+    //         } else {
+    //             self.depth += 1;
+    //             let next_val = self.val == self.left;
+    //             self.stack.push((self.depth, !next_val, self.val));
+    //             self.left = true;
+    //             self.val = next_val;
+    //             self.next()
+    //         }
+    //     }
+    // }
+    // let mut filler_bits = FillerBits::new(final_len, parsed.len() + 1);
+    // end of Option two
 
     // block_size: largest power of two that divides final_len
     let block_size = (1 << final_len.trailing_zeros());
@@ -81,33 +134,35 @@ pub fn run() {
         let mut full_chunks = remaining / chunk_len; // notice the integer division
         remaining -= full_chunks * chunk_len;
 
-        // The sum of a chunk is always false, so every bit would flip `current`.
+        // If the sum of a chunk is false, every bit would flip `current`.
         // This can be fast-forwarded by checking if that would happen an odd number
-        // of times.
-        if full_chunks & 1 == 1 {
+        // of times. If chunk_sum is true, do nothing because true is a neutral element.
+        if !chunk_sum && full_chunks & 1 == 1 {
             current = !current;
         }
 
         // Combine all the filler bits, two per chunk.
         for b in filler_bits.by_ref().take(full_chunks * 2) {
-            current = current == *b;
+            current = current == b;
         }
 
         // Assemble the boundary chunk into an iterator, take all that is in our block
         // and put the rest into carry.
         let mut iter = parsed
             .iter()
+            .copied()
             .chain(filler_bits.next())
-            .chain(inverted.iter())
+            .chain(inverted.iter().copied())
             .chain(filler_bits.next());
 
         for b in iter.by_ref().take(remaining) {
-            current = current == *b;
+            current = current == b;
         }
         print!("{}", current as u8);
 
         carry.extend(iter);
     }
+    println!();
 }
 
 #[allow(unused)]
