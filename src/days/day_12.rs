@@ -77,11 +77,10 @@ pub fn run() {
         .map(|l| l.parse::<Instruction>().unwrap())
         .to_vec();
 
-    let mut registers = [('a', 0), ('b', 0), ('c', 1), ('d', 0isize)]
-        .iter()
-        .copied()
-        .to_map();
+    let mut registers = ('a'..='d').map(|c| (c, 0isize)).to_map();
     let mut ip = 0;
+
+    *registers.get_mut(&'c').unwrap() = 1;
 
     while let Some(instr) = ip.try_into().ok().and_then(|n: usize| parsed.get(n)) {
         match instr.command {
@@ -117,10 +116,7 @@ pub fn part_one() {
         .map(|l| l.parse::<Instruction>().unwrap())
         .to_vec();
 
-    let mut registers = [('a', 0), ('b', 0), ('c', 0), ('d', 0isize)]
-        .iter()
-        .copied()
-        .to_map();
+    let mut registers = ('a'..='d').map(|c| (c, 0isize)).to_map();
     let mut ip = 0;
 
     while let Some(instr) = ip.try_into().ok().and_then(|n: usize| parsed.get(n)) {
