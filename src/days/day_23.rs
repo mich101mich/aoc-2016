@@ -79,6 +79,52 @@ fn get_value_mut(registers: &mut HashMap<char, isize>, param: Parameter) -> Opti
     }
 }
 
+fn detect_advanced_ops(
+    instr: &[Instruction],
+    ip: usize,
+    reg: &mut HashMap<char, isize>,
+) -> Option<usize> {
+    if ip + 5 > instr.len() {
+        return None;
+    }
+    let instr = &instr[ip..][..5];
+    let case_a = instr[0].command == Inc
+        && instr[1].command == Dec
+        && instr[1].params[0] == instr[2].params[0];
+    let case_b = instr[0].command == Dec
+        && instr[1].command == Inc
+        && instr[0].params[0] == instr[2].params[0];
+
+    if instr[2].command != Jnz || (!case_a && !case_b) || instr[2].params[1] != Parameter::Value(-2)
+    {
+        return None;
+    }
+    let (target, src) = if case_a { (0, 1) } else { (1, 0) };
+    let a = get_value(reg, instr[src].params[0]);
+    if instr[4].command == Jnz
+        && instr[3].command == Dec
+        && instr[3].params[0] == instr[4].params[0]
+        && instr[4].params[1] == Parameter::Value(-5)
+    {
+        // multiplication
+        let b = get_value(reg, instr[3].params[0]);
+        if let Some(target) = get_value_mut(reg, instr[target].params[0]) {
+            *target += a * b;
+            *get_value_mut(reg, instr[src].params[0]).unwrap() = 0;
+            *get_value_mut(reg, instr[3].params[0]).unwrap() = 0;
+            return Some(5);
+        }
+    } else {
+        // addition
+        if let Some(target) = get_value_mut(reg, instr[target].params[0]) {
+            *target += a;
+            *get_value_mut(reg, instr[src].params[0]).unwrap() = 0;
+            return Some(3);
+        }
+    }
+    None
+}
+
 #[allow(unused)]
 pub fn run() {
     #[allow(unused_variables)]
@@ -95,45 +141,9 @@ pub fn run() {
     *registers.get_mut(&'a').unwrap() = 12;
 
     while let Some(instr) = get_instr(&parsed, ip) {
-        if ip as usize + 5 <= parsed.len() {
-            let parsed = &parsed[ip as usize..][..5];
-            let case_a = parsed[0].command == Inc
-                && parsed[1].command == Dec
-                && parsed[1].params[0] == parsed[2].params[0];
-            let case_b = parsed[0].command == Dec
-                && parsed[1].command == Inc
-                && parsed[0].params[0] == parsed[2].params[0];
-
-            if parsed[2].command == Jnz
-                && (case_a || case_b)
-                && parsed[2].params[1] == Parameter::Value(-2)
-            {
-                let (target, src) = if case_a { (0, 1) } else { (1, 0) };
-                let a = get_value(&registers, parsed[src].params[0]);
-
-                if parsed[4].command == Jnz
-                    && parsed[3].command == Dec
-                    && parsed[3].params[0] == parsed[4].params[0]
-                    && parsed[4].params[1] == Parameter::Value(-5)
-                {
-                    // multiplication
-                    let b = get_value(&registers, parsed[3].params[0]);
-                    if let Some(target) = get_value_mut(&mut registers, parsed[target].params[0]) {
-                        *target += a * b;
-                        *get_value_mut(&mut registers, parsed[src].params[0]).unwrap() = 0;
-                        *get_value_mut(&mut registers, parsed[3].params[0]).unwrap() = 0;
-                        ip += 5;
-                        continue;
-                    }
-                } else if let Some(target) = get_value_mut(&mut registers, parsed[target].params[0])
-                {
-                    // addition
-                    *target += a;
-                    *get_value_mut(&mut registers, parsed[src].params[0]).unwrap() = 0;
-                    ip += 3;
-                    continue;
-                }
-            }
+        if let Some(jump) = detect_advanced_ops(&parsed, ip as usize, &mut registers) {
+            ip += jump as isize;
+            continue;
         }
         match instr.command {
             Copy => {
