@@ -8,8 +8,8 @@ pub fn run() {
     let parsed = input.chars().map(|c| c == '1').to_vec();
     let inverted = parsed.iter().rev().map(|b| !*b).to_vec();
 
-    let final_len = 35651584;
-    // let final_len = 0x2222200000; // my own upping the ante: this _still_ works O_O
+    let final_len = 35651584usize; // == 0x2200000usize;
+    // let final_len = 0x22222200000usize; // my own upping the ante: you can add as many 2 or 0 and it will just take longer
 
     // the easy solution: take the code from part one and change `final_len`.
     // but that is boring.
@@ -49,70 +49,9 @@ pub fn run() {
     // The filler bits.
     // The algorithm starts with a 0 between the segments, adds another 0 and flips
     // the first part around and inverts it.
-    // Option one: Just run the algorithm as intended and store the bits.
-    // Takes a lot of memory, but is faster.
-    let num_filler_bits = final_len / (parsed.len() + 1) + 1;
-    let mut filler_bits = vec![false; num_filler_bits];
-    let mut i = 1;
-
-    while i < num_filler_bits {
-        let (src, dst) = filler_bits.split_at_mut(i);
-        // the added `0` is already in the vec, since it was initialized with `false`.
-        src.iter()
-            .rev()
-            .zip(dst[1..].iter_mut())
-            .for_each(|(src, dst)| {
-                *dst = !*src;
-            });
-        i += src.len() + 1;
-    }
-    let mut filler_bits = filler_bits.into_iter(); // convert to iterator for convenience
-
-    // Option two: Use a generator
-    // Takes like 99% less memory, but the runtime is twice as long
-    // struct FillerBits {
-    //     stack: Vec<(usize, bool, bool)>,
-    //     depth: usize,
-    //     max_depth: usize,
-    //     val: bool,
-    //     left: bool,
-    // }
-    // impl FillerBits {
-    //     pub fn new(final_len: usize, segment_len: usize) -> Self {
-    //         let max_depth = (final_len as f32 / segment_len as f32).log2().ceil() as usize;
-    //         Self {
-    //             stack: Vec::with_capacity(max_depth * 2),
-    //             depth: 0,
-    //             max_depth,
-    //             val: false,
-    //             left: true,
-    //         }
-    //     }
-    // }
-    // impl Iterator for FillerBits {
-    //     type Item = bool;
-    //     fn next(&mut self) -> Option<Self::Item> {
-    //         if self.depth == self.max_depth {
-    //             if let Some((next_depth, next_val, prev_val)) = self.stack.pop() {
-    //                 self.depth = next_depth;
-    //                 self.val = next_val;
-    //                 self.left = false;
-    //                 Some(prev_val)
-    //             } else {
-    //                 None
-    //             }
-    //         } else {
-    //             self.depth += 1;
-    //             let next_val = self.val == self.left;
-    //             self.stack.push((self.depth, !next_val, self.val));
-    //             self.left = true;
-    //             self.val = next_val;
-    //             self.next()
-    //         }
-    //     }
-    // }
-    // let mut filler_bits = FillerBits::new(final_len, parsed.len() + 1);
-    // end of Option two
+    // Technical name: The regular paper-folding (or dragon curve) sequence. (https://oeis.org/A014707)
+    // For easier calculation: https://oeis.org/A038189
+    let mut filler_bits = (1usize..).map(|i| (i >> (i.trailing_zeros() + 1)) & 1 == 1);
 
     // block_size: largest power of two that divides final_len
     let block_size = (1 << final_len.trailing_zeros());
@@ -158,7 +97,11 @@ pub fn run() {
         for b in iter.by_ref().take(remaining) {
             current = current == b;
         }
-        print!("{}", current as u8);
+        if current {
+            print!("1");
+        } else {
+            print!("0");
+        }
 
         carry.extend(iter);
     }
